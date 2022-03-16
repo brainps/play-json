@@ -27,6 +27,30 @@ object TestMacros:
 
   // ---
 
+  inline def testBigTupleTypeRepr[T]: String =
+    ${ testBigTupleTypeReprMacro[T] }
+
+  def testBigTupleTypeReprMacro[T: Type](using q: Quotes): Expr[String] = {
+    trait Foo {
+      type Q <: Quotes
+      val quotes: Q
+      def elmtTpr: quotes.reflect.TypeRepr
+    }
+
+    val helper = new QuotesHelper with Foo {
+      type Q = q.type
+      val quotes = q
+
+      import quotes.reflect.*
+
+      val elmtTpr = TypeRepr.of[T]
+    }
+
+    val tupleTpr = helper.tupleTypeRepr(List.fill(26)(helper.elmtTpr))
+
+    Expr(tupleTpr.show)
+  }
+
   inline def testProductElements[T]: List[String] =
     ${ testProductElementsMacro[T] }
 

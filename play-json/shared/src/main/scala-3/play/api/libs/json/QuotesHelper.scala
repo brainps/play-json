@@ -14,7 +14,6 @@ import scala.quoted.Expr
 import scala.quoted.Quotes
 import scala.quoted.Type
 
-// TODO: Unit tests
 private[json] trait QuotesHelper {
   protected type Q <: Quotes
 
@@ -155,18 +154,8 @@ private[json] trait QuotesHelper {
   )(using
       Type[T],
       Type[U]
-  ): Tuple2[TypeRepr, Expr[T] => (Expr[U] => Expr[R]) => Expr[R]] = {
-    val unappliedTupleTpr: TypeRepr = {
-      if (types.isEmpty) {
-        TypeRepr.of[EmptyTuple]
-      } else {
-        TypeRepr.typeConstructorOf(Class.forName(s"scala.Tuple${types.size}"))
-      }
-    }
-
-    val tupleTpr = unappliedTupleTpr.appliedTo(types)
-
-    tupleTpr -> {
+  ): Tuple2[TypeRepr, Expr[T] => (Expr[U] => Expr[R]) => Expr[R]] =
+    tupleTypeRepr(types) -> {
       (in: Expr[T]) =>
         { (f: (Expr[U] => Expr[R])) =>
           '{
@@ -174,6 +163,32 @@ private[json] trait QuotesHelper {
             ${ f('{ tuple }) }
           }
         }
+    }
+
+  /**
+   * @param types the elements types
+   */
+  def tupleTypeRepr(types: List[TypeRepr]): TypeRepr = {
+    val sz = types.size
+
+    if (types.isEmpty) {
+      TypeRepr.of[EmptyTuple]
+    } else if (sz < 23) {
+      val tpr = TypeRepr.typeConstructorOf(Class.forName(s"scala.Tuple${types.size}"))
+
+      tpr.appliedTo(types)
+    } else {
+      val prefixSize       = sz - 22
+      val tailUnappliedTpr = TypeRepr.of[Tuple22].appliedTo(types.drop(prefixSize))
+
+      type IsTuple[T <: Tuple] = T
+
+      val tupleTpe =
+        types.take(prefixSize).map(_.asType).foldLeft(tailUnappliedTpr.asType) { case ('[IsTuple[tpe]], '[elmt]) =>
+          TypeRepr.of[elmt *: tpe].asType
+        }
+
+      TypeRepr.of(using tupleTpe)
     }
   }
 

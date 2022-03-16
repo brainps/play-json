@@ -16,11 +16,19 @@ final class MacroScala3Spec
       "no Product Conversion" in {
         import MacroSpec.UsingAlias
 
-        "Macros.writer[UsingAlias]".mustNot(typeCheck)
+        "Json.writes[UsingAlias]".mustNot(typeCheck)
       }
 
       "no custom ProductOf" in {
-        "Macros.writer[CustomNoProductOf]".mustNot(typeCheck)
+        "Json.writes[CustomNoProductOf]".mustNot(typeCheck)
+      }
+    }
+
+    "be handled" when {
+      "is declared with more than 22 fields" in {
+        val format = Json.format[BigFat]
+
+        format.writes(BigFat.example).mustEqual(Json.obj())
       }
     }
   }
