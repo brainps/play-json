@@ -70,11 +70,13 @@ val javacSettings = Seq(
 
 val scalacOpts = Seq(
   "-target:jvm-1.8",
-  "-Ywarn-unused:imports",
+// Scala 2.11 Backcompile
+//  "-Ywarn-unused:imports",
   "-Xlint:nullary-unit",
   "-Xlint",
-  "-Ywarn-dead-code",
-  "-Ywarn-macros:after"
+  "-Ywarn-dead-code"
+// Scala 2.11 Backcompile
+//  "-Ywarn-macros:after"
 )
 
 val silencerVersion = "1.4.4"
@@ -116,14 +118,16 @@ lazy val commonSettings = Def.settings(
     )
   },
   scalaVersion := ScalaVersions.scala212,
-  crossScalaVersions := Seq(ScalaVersions.scala212, ScalaVersions.scala213),
+  // Scala 2.11 Backcompile
+  crossScalaVersions := Seq("2.11.12", ScalaVersions.scala212, ScalaVersions.scala213),
   javacOptions in Compile ++= javacSettings,
   javacOptions in Test ++= javacSettings,
   javacOptions in (Compile, compile) ++= Seq("-target", "1.8"), // sbt #1785, avoids passing to javadoc
   scalacOptions ++= scalacOpts,
   scalacOptions in (Compile, doc) ++= Seq(
     // Work around 2.12 bug which prevents javadoc in nested java classes from compiling.
-    "-no-java-comments",
+    // Scala 2.11 Backcompile
+    // "-no-java-comments",
   )
 )
 
@@ -158,7 +162,9 @@ lazy val root = project
 lazy val `play-json` = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Full)
   .in(file("play-json"))
-  .enablePlugins(PlayLibrary, Playdoc)
+  // Scala 2.11 Backcompile
+  //.enablePlugins(PlayLibrary, Playdoc)
+  .enablePlugins(PlayLibrary)
   .configs(Docs)
   .settings(
     commonSettings ++ playJsonMimaSettings ++ Seq(
